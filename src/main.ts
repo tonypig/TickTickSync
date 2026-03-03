@@ -587,15 +587,16 @@ export default class TickTickSync extends Plugin {
 				//get current view
 				const activateFile = this.app.workspace.getActiveFile();
 				//To avoid conflicts, Do not check files being edited
-				if (activateFile?.path == filepath) {
-					//TODO: find out if they cut or pasted task(s) in here.
-					return;
-				}
+					if (activateFile?.path == filepath) {
+						//TODO: find out if they cut or pasted task(s) in here.
+						return;
+					}
 
-				await this.service.fullTextNewTaskCheck(filepath);
-			} catch (error) {
-				log.error('An error occurred while modifying the file: ', error);
-				// You can add further error handling logic here. For example, you may want to
+					await this.service.fullTextNewTaskCheck(filepath);
+					await this.service.fullTextStatusCheck(filepath);
+				} catch (error) {
+					log.error('An error occurred while modifying the file: ', error);
+					// You can add further error handling logic here. For example, you may want to
 				// revert certain operations, or alert the user about the error.
 			}
 		}));
@@ -719,7 +720,6 @@ export default class TickTickSync extends Plugin {
 		return "Unknown Device";
 	}
 }
-
 
 
 

@@ -183,6 +183,12 @@ export class TickTickService {
 		});
 	}
 
+	async fullTextStatusCheck(filepath: string) {
+		await doWithLock(LOCK_TASKS, async () => {
+			await this.tickTickSync?.fullTextStatusCheck(filepath);
+		});
+	}
+
 	async lineNewContentTaskCheck(editor: Editor, info: MarkdownView | MarkdownFileInfo) {
 		return await doWithLock(LOCK_TASKS, async () => {
 			await this.tickTickSync?.lineNewContentTaskCheck(editor, info);

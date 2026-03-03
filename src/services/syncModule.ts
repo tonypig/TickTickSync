@@ -298,6 +298,60 @@ export class SyncMan {
 		return true;
 	}
 
+	// Lightweight status-only check for externally modified files (e.g. Tasks dashboard toggles).
+	// It only compares checkbox state and updates TickTick task status.
+	async fullTextStatusCheck(file_path: string): Promise<boolean> {
+		if (!file_path) {
+			return false;
+		}
+		const file = this.app.vault.getAbstractFileByPath(file_path);
+		if ((file) && (file instanceof TFolder)) {
+			return false;
+		}
+		if (!file) {
+			return false;
+		}
+
+		const fileMap = new FileMap(this.app, this.plugin, file);
+		await fileMap.init();
+
+		let changed = false;
+		const lines = fileMap.getFileLines().split('\n');
+		for (const lineText of lines) {
+			if (!this.plugin.taskParser?.hasTickTickId(lineText) || !this.plugin.taskParser?.hasTickTickTag(lineText)) {
+				continue;
+			}
+			const taskId = this.plugin.taskParser.getTickTickId(lineText);
+			if (!taskId) {
+				continue;
+			}
+			const cachedTask = this.plugin.cacheOperation?.loadTaskFromCacheID(taskId);
+			if (!cachedTask) {
+				continue;
+			}
+
+			const isChecked = this.plugin.taskParser.isTaskCheckboxChecked(lineText);
+			const lineStatus = isChecked ? 2 : 0;
+			const cachedStatus = cachedTask.status > 0 ? 2 : 0;
+			if (lineStatus === cachedStatus) {
+				continue;
+			}
+
+			if (lineStatus > 0) {
+				await this.plugin.tickTickRestAPI?.CloseTask(taskId, cachedTask.projectId);
+				await this.plugin.cacheOperation?.closeTaskToCacheByID(taskId);
+			} else {
+				await this.plugin.tickTickRestAPI?.OpenTask(taskId, cachedTask.projectId);
+				await this.plugin.cacheOperation?.reopenTaskToCacheByID(taskId);
+			}
+			changed = true;
+		}
+		if (changed) {
+			await this.plugin.saveSettings();
+		}
+		return changed;
+	}
+
 	//Deal with Tasks and Task Items here because they are single line entities.
 	async lineModifiedTaskCheck(filepath: string | undefined, lineText: string, lineNumber: number | undefined, fileMap: FileMap): Promise<boolean> {
 		let modified = false;
