@@ -99,11 +99,11 @@ export class SyncMan {
 							let updatedTask = await this.plugin.cacheOperation?.removeTaskItem(fileMetadata, task.taskId, deletedItems);
 							if (updatedTask) {
 								updatedTask.title = this.plugin.taskParser.stripOBSUrl(updatedTask.title);
-								if (getSettings().fileLinksInTickTick === 'taskLink') {
-									let taskURL = this.plugin.taskParser.getObsidianUrlFromFilepath(filepath);
-									if (taskURL) {
-										updatedTask.title = updatedTask.title + ' ' + taskURL;
-									}
+									if (getSettings().fileLinksInTickTick === 'taskLink' && !getSettings().hideNoteLinksInTickTick) {
+										let taskURL = this.plugin.taskParser.getObsidianUrlFromFilepath(filepath);
+										if (taskURL) {
+											updatedTask.title = updatedTask.title + ' ' + taskURL;
+										}
 								}
 								let updateResult = await this.plugin.tickTickRestAPI?.UpdateTask(updatedTask);
 							}
@@ -1252,9 +1252,9 @@ export class SyncMan {
 				const task = await this.plugin.cacheOperation?.loadTaskFromCacheID(taskDetail.taskId);
 				if (task) {
 					task.title = this.plugin.taskParser.stripOBSUrl(task.title);
-					if (getSettings().fileLinksInTickTick === 'taskLink' && taskURL) {
-						task.title = task.title + ' ' + taskURL;
-					}
+						if (getSettings().fileLinksInTickTick === 'taskLink' && !getSettings().hideNoteLinksInTickTick && taskURL) {
+							task.title = task.title + ' ' + taskURL;
+						}
 					const updatedTask = await this.plugin.tickTickRestAPI?.UpdateTask(task);
 					//Cache the title without the URL because that's what we're going to do content compares on.
 					updatedTask.title = await this.plugin.taskParser?.stripOBSUrl(updatedTask.title);
@@ -1464,10 +1464,10 @@ export class SyncMan {
 			let taskURL = this.plugin.taskParser?.getObsidianUrlFromFilepath(filepath);
 			//If getSettings().fileLinksInTickTick === "noteLink") it's already been handled in
 			//   convertLineToTask
-			if (getSettings().fileLinksInTickTick === 'taskLink') {
-				if (taskURL) {
-					parentTask.title = parentTask.title + ' ' + taskURL;
-				}
+				if (getSettings().fileLinksInTickTick === 'taskLink' && !getSettings().hideNoteLinksInTickTick) {
+					if (taskURL) {
+						parentTask.title = parentTask.title + ' ' + taskURL;
+					}
 			}
 		}
 		const result = await this.plugin.tickTickRestAPI?.UpdateTask(parentTask);

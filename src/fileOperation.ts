@@ -519,7 +519,7 @@ export class FileOperation {
 			}
 
 				task.title = this.plugin.taskParser.stripOBSUrl(task.title);
-				if (getSettings().fileLinksInTickTick === 'taskLink') {
+				if (getSettings().fileLinksInTickTick === 'taskLink' && !getSettings().hideNoteLinksInTickTick) {
 					let taskURL = "";
 					if (!bTaskMove) {
 						taskURL = this.plugin.taskParser?.getObsidianUrlFromFilepath(file.path);

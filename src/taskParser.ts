@@ -287,10 +287,10 @@ export class TaskParser {
 				url = this.plugin.taskParser.getObsidianUrlFromFilepath(filepath);
 			}
 		}
-		if (getSettings().fileLinksInTickTick === 'taskLink') {
+		if (getSettings().fileLinksInTickTick === 'taskLink' && !getSettings().hideNoteLinksInTickTick) {
 			taskURL = url;
 		}
-		if (getSettings().fileLinksInTickTick === 'noteLink' && !getSettings().hideNoteLinksInTickTick) {
+		if (getSettings().fileLinksInTickTick === 'noteLink') {
 			noteURL = url + '\n';
 		}
 

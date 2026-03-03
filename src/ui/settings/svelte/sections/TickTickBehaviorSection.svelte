@@ -37,9 +37,9 @@
 >
 	<div class="setting-item">
 		<div class="setting-item-info">
-			<div class="setting-item-name">Hide note links in TickTick</div>
+			<div class="setting-item-name">Hide Obsidian links in TickTick task titles</div>
 			<div class="setting-item-description">
-				Do not include the Obsidian file link in TickTick task description/content when link destination is set to Description.
+				Do not append Obsidian file links to TickTick task titles when link destination is set to Link in Task.
 			</div>
 		</div>
 		<div class="setting-item-control">
