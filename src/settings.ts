@@ -21,7 +21,9 @@ export interface ITickTickSyncSettings {
 	syncNotes: boolean;
 	noteDelimiter: string;
 	fileLinksInTickTick: string;
+	hideNoteLinksInTickTick: boolean;
 	taskLinksInObsidian: string;
+	filterTickTickTagOnSync: boolean;
 	bkupFolder: string;
 
 
@@ -60,7 +62,9 @@ export const DEFAULT_SETTINGS: ITickTickSyncSettings = {
 	syncNotes: true,
 	noteDelimiter: '-------------------------------------------------------------',
 	fileLinksInTickTick: 'taskLink',
+	hideNoteLinksInTickTick: false,
 	taskLinksInObsidian: 'taskLink',
+	filterTickTickTagOnSync: false,
 	bkupFolder: '/',
 
 	inboxID: '',

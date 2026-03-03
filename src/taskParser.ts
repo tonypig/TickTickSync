@@ -290,7 +290,7 @@ export class TaskParser {
 		if (getSettings().fileLinksInTickTick === 'taskLink') {
 			taskURL = url;
 		}
-		if (getSettings().fileLinksInTickTick === 'noteLink') {
+		if (getSettings().fileLinksInTickTick === 'noteLink' && !getSettings().hideNoteLinksInTickTick) {
 			noteURL = url + '\n';
 		}
 
@@ -531,6 +531,9 @@ export class TaskParser {
 		const tags = [...lineText.matchAll(REGEX.ALL_TAGS)];
 		let tagArray = tags.map(tag => tag[0].replace('#', ''));
 		tagArray = tagArray.map(tag => tag.replace(/\//g, '-'));
+		if (getSettings().filterTickTickTagOnSync) {
+			tagArray = tagArray.filter(tag => tag.toLowerCase() !== 'ticktick');
+		}
 		// tagArray.forEach(tag => log.debug("#### get all tags", tag))
 
 		return tagArray;

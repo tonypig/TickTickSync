@@ -3,6 +3,7 @@
   import LimitSyncSection from './LimitSyncSection.svelte';
   import AutoSyncIntervalSection from './AutoSyncIntervalSection.svelte';
   import FullVaultSyncSection from './FullVaultSyncSection.svelte';
+  import TickTickBehaviorSection from './TickTickBehaviorSection.svelte';
 
   export let plugin;
 
@@ -10,7 +11,8 @@
     { key: 'defaults', component: DefaultsSection },
     { key: 'limit', component: LimitSyncSection },
     { key: 'auto', component: AutoSyncIntervalSection },
-    { key: 'full', component: FullVaultSyncSection }
+    { key: 'full', component: FullVaultSyncSection },
+    { key: 'ticktick', component: TickTickBehaviorSection }
   ];
 
   let openSection: string = 'defaults';
