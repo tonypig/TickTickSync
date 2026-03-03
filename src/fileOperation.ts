@@ -518,12 +518,13 @@ export class FileOperation {
 				task.tags = tags;
 			}
 
-			if (getSettings().fileLinksInTickTick !== 'noLink') {
-				let taskURL = "";
-				if (!bTaskMove) {
-					taskURL = this.plugin.taskParser?.getObsidianUrlFromFilepath(file.path);
-				} else {
-					taskURL = this.plugin.taskParser?.getObsidianUrlFromFilepath(filePathForNewProject);
+				task.title = this.plugin.taskParser.stripOBSUrl(task.title);
+				if (getSettings().fileLinksInTickTick === 'taskLink') {
+					let taskURL = "";
+					if (!bTaskMove) {
+						taskURL = this.plugin.taskParser?.getObsidianUrlFromFilepath(file.path);
+					} else {
+						taskURL = this.plugin.taskParser?.getObsidianUrlFromFilepath(filePathForNewProject);
 				}
 				if (taskURL) {
 					task.title = task.title + ' ' + taskURL;
