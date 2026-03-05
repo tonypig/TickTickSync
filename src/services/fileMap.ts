@@ -282,8 +282,12 @@ export class FileMap {
 	}
 
 	/**
-	 * Reorder root-level TickTick task blocks so open tasks stay before completed tasks.
-	 * Keeps relative order within each group and preserves non-task text around task region.
+	 * Reorder root-level TickTick task blocks.
+	 * - Open tasks before completed tasks
+	 * - For open tasks:
+	 *   1) tasks with explicit time first, sorted by time ascending
+	 *   2) tasks without explicit time, newest first
+	 * Keeps non-task text around the task region unchanged.
 	 */
 	reorderRootTasksByCompletion(): boolean {
 		if (!this.fileLines || this.fileLines.length === 0) {
@@ -295,8 +299,26 @@ export class FileMap {
 			start: number;
 			end: number;
 			completed: boolean;
+			hasExplicitTime: boolean;
+			timeTs: number;
+			createdTs: number;
 			lines: string[];
 		}[] = [];
+
+		const toTimestamp = (value?: string): number => {
+			if (!value) {
+				return Number.NaN;
+			}
+			const ts = new Date(value).getTime();
+			return Number.isNaN(ts) ? Number.NaN : ts;
+		};
+
+		const hasExplicitTime = (value?: string): boolean => {
+			if (!value) {
+				return false;
+			}
+			return /\d{2}:\d{2}/.test(value);
+		};
 
 		for (let i = 0; i < this.fileLines.length; i++) {
 			const line = this.fileLines[i];
@@ -321,18 +343,58 @@ export class FileMap {
 			const start = rootStarts[idx];
 			const end = (idx + 1 < rootStarts.length) ? rootStarts[idx + 1] - 1 : regionEnd;
 			const firstLine = this.fileLines[start];
+			const taskId = this.plugin.taskParser.getTickTickId(firstLine);
+			const task = taskId ? this.plugin.cacheOperation?.loadTaskFromCacheID(taskId) : undefined;
+			const dueTs = toTimestamp(task?.dueDate);
+			const startTs = toTimestamp(task?.startDate);
+			const effectiveTimeTs = !Number.isNaN(dueTs) ? dueTs : startTs;
+			const createdTs = toTimestamp(task?.createdTime || task?.modifiedTime);
 			rootChunks.push({
 				start,
 				end,
 				completed: this.plugin.taskParser.isTaskCheckboxChecked(firstLine),
+				hasExplicitTime: hasExplicitTime(task?.dueDate) || hasExplicitTime(task?.startDate),
+				timeTs: effectiveTimeTs,
+				createdTs,
 				lines: this.fileLines.slice(start, end + 1)
 			});
 		}
 
-		const desired = [
-			...rootChunks.filter(c => !c.completed),
-			...rootChunks.filter(c => c.completed)
-		];
+		const openChunks = rootChunks.filter(c => !c.completed);
+		const doneChunks = rootChunks.filter(c => c.completed);
+		openChunks.sort((a, b) => {
+			// 1) Timed open tasks first
+			if (a.hasExplicitTime !== b.hasExplicitTime) {
+				return a.hasExplicitTime ? -1 : 1;
+			}
+
+			// 2) Timed tasks sorted by time (earlier first)
+			if (a.hasExplicitTime && b.hasExplicitTime) {
+				const aHasTime = !Number.isNaN(a.timeTs);
+				const bHasTime = !Number.isNaN(b.timeTs);
+				if (aHasTime !== bHasTime) {
+					return aHasTime ? -1 : 1;
+				}
+				if (aHasTime && bHasTime && a.timeTs !== b.timeTs) {
+					return a.timeTs - b.timeTs;
+				}
+			}
+
+			// 3) Newer first
+			const aHasCreated = !Number.isNaN(a.createdTs);
+			const bHasCreated = !Number.isNaN(b.createdTs);
+			if (aHasCreated !== bHasCreated) {
+				return aHasCreated ? -1 : 1;
+			}
+			if (aHasCreated && bHasCreated && a.createdTs !== b.createdTs) {
+				return b.createdTs - a.createdTs;
+			}
+
+			// 4) Stable fallback to original order
+			return a.start - b.start;
+		});
+
+		const desired = [...openChunks, ...doneChunks];
 
 		const unchanged = desired.every((chunk, idx) => chunk.start === rootChunks[idx].start);
 		if (unchanged) {
