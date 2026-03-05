@@ -875,6 +875,13 @@ export class FileOperation {
 				return a.level - b.level;
 			}
 
+			// For tasks at the same level, keep open tasks before completed tasks.
+			const aCompleted = a.status !== 0;
+			const bCompleted = b.status !== 0;
+			if (aCompleted !== bCompleted) {
+				return aCompleted ? 1 : -1;
+			}
+
 			// Secondary sort by original order (using sortOrder property)
 			return a.sortOrder - b.sortOrder;
 		});
