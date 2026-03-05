@@ -281,6 +281,71 @@ export class FileMap {
 		this.fileLines[line] = text;
 	}
 
+	/**
+	 * Reorder root-level TickTick task blocks so open tasks stay before completed tasks.
+	 * Keeps relative order within each group and preserves non-task text around task region.
+	 */
+	reorderRootTasksByCompletion(): boolean {
+		if (!this.fileLines || this.fileLines.length === 0) {
+			return false;
+		}
+
+		const rootStarts: number[] = [];
+		const rootChunks: {
+			start: number;
+			end: number;
+			completed: boolean;
+			lines: string[];
+		}[] = [];
+
+		for (let i = 0; i < this.fileLines.length; i++) {
+			const line = this.fileLines[i];
+			const isTask = this.plugin.taskParser.isMarkdownTask(line);
+			const hasId = this.plugin.taskParser.hasTickTickId(line);
+			const isRoot = this.plugin.taskParser.getNumTabs(line) === 0;
+			if (!isTask || !hasId || !isRoot) {
+				continue;
+			}
+			rootStarts.push(i);
+			i = this.getTaskEndLineByIdx(i);
+		}
+
+		if (rootStarts.length < 2) {
+			return false;
+		}
+
+		const regionStart = rootStarts[0];
+		const regionEnd = this.getTaskEndLineByIdx(rootStarts[rootStarts.length - 1]);
+
+		for (let idx = 0; idx < rootStarts.length; idx++) {
+			const start = rootStarts[idx];
+			const end = (idx + 1 < rootStarts.length) ? rootStarts[idx + 1] - 1 : regionEnd;
+			const firstLine = this.fileLines[start];
+			rootChunks.push({
+				start,
+				end,
+				completed: this.plugin.taskParser.isTaskCheckboxChecked(firstLine),
+				lines: this.fileLines.slice(start, end + 1)
+			});
+		}
+
+		const desired = [
+			...rootChunks.filter(c => !c.completed),
+			...rootChunks.filter(c => c.completed)
+		];
+
+		const unchanged = desired.every((chunk, idx) => chunk.start === rootChunks[idx].start);
+		if (unchanged) {
+			return false;
+		}
+
+		const prefix = this.fileLines.slice(0, regionStart);
+		const suffix = this.fileLines.slice(regionEnd + 1);
+		const reorderedRegion = desired.flatMap(c => c.lines);
+		this.fileLines = [...prefix, ...reorderedRegion, ...suffix];
+		return true;
+	}
+
 	hasTasks(fullVaultSync: boolean) {
 		return this.fileLines.some(line => this.plugin.taskParser.isMarkdownTask(line) && (fullVaultSync || this.plugin.taskParser.hasTickTickId(line)));
 	}
@@ -574,4 +639,3 @@ private getTaskLinesByIdx(taskIdx: number, taskRecord: ITaskRecord) {
 		return moveMap;
 	}
 }
-

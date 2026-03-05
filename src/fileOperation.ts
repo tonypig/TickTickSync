@@ -546,6 +546,9 @@ export class FileOperation {
 			}
 		}
 
+		// Keep root-level notes sorted as: open tasks first, then completed tasks.
+		fileMap.reorderRootTasksByCompletion();
+
 		const resultLines = fileMap.getFileLines();
 		this.plugin.lastLines.set(file.path, resultLines.length);
 		return resultLines;
