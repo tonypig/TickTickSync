@@ -59,30 +59,34 @@
 			.addSearch((search) => {
 				search.setPlaceholder('Select or Create folder')
 					.setValue(getDefaultFolder());
-				search.setValue(myProjectsOptions);
 				new FolderSuggest(search.inputEl, plugin.app);
 
-				// OnChange: Only update the UI, DO NOT create folder here
+				const persistFolder = async (value: string) => {
+					const newFolder = await validateNewFolder(value, 'Default');
+					if (!newFolder || newFolder === getSettings().TickTickTasksFilePath) {
+						return;
+					}
+					updateSettings({ TickTickTasksFilePath: newFolder });
+					await ensureCorrectDefaultPaths();
+					await plugin.saveSettings();
+					showUpdateButton = true;
+					showCreateText = false;
+					search.setValue(getDefaultFolder());
+				};
+
 				search.onChange((value) => {
-					// Optionally update UI or hints, but do not create any folder yet
-					// Optionally validate and give user feedback
 					currentDefault = value + '/' + getSettings().defaultProjectName;
 					showCreateText = true;
 				});
 
-				// Only create the folder if the user presses Enter
 				search.inputEl.addEventListener('keydown', async (e: KeyboardEvent) => {
 					if (e.key === 'Enter') {
-						const value = search.inputEl.value;
-						const newFolder = await validateNewFolder(value, 'Default');
-						if (newFolder) {
-							updateSettings({ TickTickTasksFilePath: newFolder });
-							await ensureCorrectDefaultPaths();
-							await plugin.saveSettings();
-							showUpdateButton = true;
-							showCreateText = false;
-						}
+						await persistFolder(search.inputEl.value);
 					}
+				});
+
+				search.inputEl.addEventListener('blur', async () => {
+					await persistFolder(search.inputEl.value);
 				});
 			});
 	}
